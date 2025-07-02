@@ -128,10 +128,8 @@ vessel_net = {
 if __name__ == '__main__':
 
     # 定义起点和目标点
-    start = (0, 0, 0)
-    goal = (1.5, -2.5, -1.0)
-
-    visualize.visualization(vessel_net, None)
+    start = (1.0, -2, 0.0)
+    goal = (1.5, 2.5, -1.0)
 
     # 运行 A* 算法
     path = a_star(start, goal, vessel_net)
