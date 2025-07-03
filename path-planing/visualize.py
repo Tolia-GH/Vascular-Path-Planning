@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import mplcursors
 import pyvista as pv
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
 def visualization(vessel_net, path=None):
     """
@@ -86,6 +87,7 @@ def visualization(vessel_net, path=None):
     plt.show()
 
 
+# 基于 pyvista 的可视化方法，对 vtk 文件兼容性更好
 def visualization_pyvista(vessel_net, path=None):
     plotter = pv.Plotter()
 
@@ -125,14 +127,25 @@ def visualization_pyvista(vessel_net, path=None):
 
     plotter.show_axes()
     plotter.show_grid(
-        xlabel='X',
-        ylabel='Y',
-        zlabel='Z',
+        xtitle='X',
+        ytitle='Y',
+        ztitle='Z',
         color='grey',
         grid='back',  # 显示哪些平面网格：可选 'front', 'back', 'all', 'none'
         location='outer',  # 坐标轴位置，可选 'outer'（默认）或 'all'
         bold=True,  # 粗体文字
         font_size=10,  # 坐标刻度字体大小
     )
+
+    plotter.show()
+
+
+def visualize_centerline(centerline_path):
+    centerline = pv.read(centerline_path)
+
+    plotter = pv.Plotter()
+
+    plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True)
+    plotter.add_mesh(centerline.points, color='red', line_width=1, render_points_as_spheres=True)
 
     plotter.show()

@@ -53,6 +53,8 @@ vessel_net = {
 
 if __name__ == '__main__':
 
+    visualize.visualize_centerline("source/vtk/Centerline_model.vtk")
+
     # 定义起点和目标点
     start = (1.0, -2, 0.0)
     goal = (1.5, 2.5, -1.0)
