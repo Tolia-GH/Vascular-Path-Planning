@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import mplcursors
-from mpl_toolkits.mplot3d import Axes3D
+import pyvista as pv
+import numpy as np
 
 def visualization(vessel_net, path=None):
     """
@@ -84,3 +85,54 @@ def visualization(vessel_net, path=None):
     # 显示图形
     plt.show()
 
+
+def visualization_pyvista(vessel_net, path=None):
+    plotter = pv.Plotter()
+
+    # 所有节点的坐标列表
+    nodes = np.array(list(vessel_net.keys()))
+
+    # 将节点作为点云添加
+    point_cloud = pv.PolyData(nodes)
+    plotter.add_mesh(point_cloud, color='black', point_size=10, render_points_as_spheres=True)
+
+    # 绘制边
+    for node, neighbors in vessel_net.items():
+        for neighbor, weight in neighbors:
+            line = pv.Line(node, neighbor)
+            plotter.add_mesh(line, color='black', line_width=1)
+
+    # 绘制路径（如果存在）
+    if path:
+        # 根据路径绘制平滑样条曲线
+        # path_points = np.array(path)
+        # path_line = pv.Spline(path_points, len(path_points) * 10)
+        # plotter.add_mesh(path_line, color='red', line_width=3)
+
+        # 根据路径绘制折线
+        path_points = np.array(path)
+        path_line = pv.PolyData()
+        path_line.points = path_points
+        cells = np.hstack([[len(path_points)], np.arange(len(path_points))])
+        path_line.lines = cells
+        plotter.add_mesh(path_line, color='red', line_width=3)
+
+        # 起点
+        plotter.add_points(np.array(path[0]), color='blue', point_size=15, render_points_as_spheres=True)
+
+        # 终点
+        plotter.add_points(np.array(path[-1]), color='green', point_size=15, render_points_as_spheres=True)
+
+    plotter.show_axes()
+    plotter.show_grid(
+        xlabel='X',
+        ylabel='Y',
+        zlabel='Z',
+        color='grey',
+        grid='back',  # 显示哪些平面网格：可选 'front', 'back', 'all', 'none'
+        location='outer',  # 坐标轴位置，可选 'outer'（默认）或 'all'
+        bold=True,  # 粗体文字
+        font_size=10,  # 坐标刻度字体大小
+    )
+
+    plotter.show()

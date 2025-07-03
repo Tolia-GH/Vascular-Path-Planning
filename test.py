@@ -1,7 +1,6 @@
 # ✅ 完整修改后的脚本，用于构建以 .fcsv 端点为节点的血管邻接图
 
 from collections import defaultdict
-from visualize import visualization  # 可选模块
 import numpy as np
 import pandas as pd
 import pyvista as pv

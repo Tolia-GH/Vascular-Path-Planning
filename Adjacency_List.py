@@ -1,13 +1,12 @@
 from collections import defaultdict
-from visualize import visualization
 import numpy as np
 import pandas as pd
 import pyvista as pv
 from scipy.spatial import KDTree
 
 # 路径配置（修改为你本地的路径）
-vtk_path = "D:/SIAT/slicer_files/Centerline/Centerline_model.vtk"       # 中心线路径
-fcsv_path = "D:/SIAT/slicer_files/Centerline/Points/Endpoints.fcsv"      # 端点坐标
+vtk_path = "./source/vtk/Centerline_model.vtk"       # 中心线路径
+fcsv_path = "./source/fcsv/Endpoints.fcsv"      # 端点坐标
 
 # ---------------------------------------
 # 第一步：读取中心线.vtk文件
