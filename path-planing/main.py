@@ -59,6 +59,12 @@ if __name__ == '__main__':
     start = (1.0, -2, 0.0)
     goal = (1.5, 2.5, -1.0)
 
+    """
+    这里在预处理的过程中设定中心线固定步长距离，对中心线上的节点进行重采样，
+    然后引入图像分割中的区域生长算法，以终点作为生长种子点，沿中心线扩散，得到中心线上每一个点距离终点的步数，
+    作为 A_star 算法的节点 h_cost，替代曼哈顿距离以及欧拉距离，得到更准确的距离
+    """
+
     # 运行 A* 算法
     path = a_star(start, goal, vessel_net)
 
@@ -67,5 +73,5 @@ if __name__ == '__main__':
     else:
         print("没有找到路径")
 
-    visualize.visualization_pyvista(vessel_net, path)
+    visualize.visualization(vessel_net, path)
 
