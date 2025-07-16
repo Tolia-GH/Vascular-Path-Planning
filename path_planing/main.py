@@ -1,5 +1,8 @@
 from a_star import a_star
+from node import Node
 import visualize
+
+vessel_nodes = []
 
 # 示例：血管网络和路径规划
 vessel_net = {
@@ -53,7 +56,11 @@ vessel_net = {
 
 if __name__ == '__main__':
 
-    visualize.visualize_centerline("source/vtk/Centerline_model.vtk")
+    visualize.visualize_centerline("../source/vtk/Centerline_model.vtk")
+
+    """
+    预处理部分，需要将中心线vtk文件转换为加权邻接表
+    """
 
     # 定义起点和目标点
     start = (1.0, -2, 0.0)
@@ -64,7 +71,6 @@ if __name__ == '__main__':
     然后引入图像分割中的区域生长算法，以终点作为生长种子点，沿中心线扩散，得到中心线上每一个点距离终点的步数，
     作为 A_star 算法的节点 h_cost，替代曼哈顿距离以及欧拉距离，得到更准确的距离
     """
-    hcost = {}
 
     # 运行 A* 算法
     path = a_star(start, goal, vessel_net)
