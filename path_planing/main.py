@@ -56,7 +56,7 @@ vessel_net = {
 
 if __name__ == '__main__':
 
-    visualize.visualize_centerline("../source/vtk/Centerline_model.vtk")
+    visualize.visualize_centerline("../source/vtk/Centerline model.vtk")
 
     """
     预处理部分，需要将中心线vtk文件转换为加权邻接表
