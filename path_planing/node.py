@@ -1,4 +1,4 @@
-# Node 类：表示 A* 算法中的节点
+# Node 类：表示 A* 算法中的节点数据结构
 class Node:
     def __init__(self, position, parent=None):
         self.position = position
