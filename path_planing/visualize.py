@@ -143,9 +143,69 @@ def visualization_pyvista(vessel_net, path=None):
 def visualize_centerline(centerline_path):
     centerline = pv.read(centerline_path)
 
+    # print(centerline)
+
+    # print(centerline.lines)
+    # print(centerline.points)
+    # print(centerline.cell)
+
     plotter = pv.Plotter()
 
+    splited_centerlines = split_polydata_lines(centerline.lines)
+
     plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True)
-    plotter.add_mesh(centerline.points, color='red', line_width=1, render_points_as_spheres=True)
+
+    # for i in range(0,103):
+    #     print(centerline.points[i])
+    #     plotter.add_mesh(centerline.points[i], color='red', line_width=1, render_points_as_spheres=True)
+    #
+    # for i in range(103,512):
+    #     print(centerline.points[i])
+    #     plotter.add_mesh(centerline.points[i], color='green', line_width=1, render_points_as_spheres=True)
+
+    plotter.add_mesh(centerline.points, color='blue', line_width=1, render_points_as_spheres=True, pickable=True)
+
+    # 回调函数（点击时触发）
+    def callback(point, picker):
+        if point is None:
+            return
+
+        print(point)
+
+
+    # 启用点拾取
+    plotter.enable_point_picking(
+        callback=callback,
+        use_picker=True,
+        show_message=True,
+        show_point=True,
+        picker='point'
+    )
 
     plotter.show()
+
+def split_polydata_lines(lines):
+    splited_lines = []
+    line_length = lines[0]
+    left_edge = 1
+    right_edge = left_edge + line_length - 1
+    line = []
+    for i in range(1, len(lines)):
+
+        if left_edge <= i <= right_edge:
+            line.append(lines[i])
+
+        if i == len(lines) - 1:
+            splited_lines.append(line)
+            break
+
+        if i == right_edge:
+
+            splited_lines.append(line)
+            line_length = lines[right_edge+1]
+            left_edge = right_edge + 2
+            right_edge = left_edge + line_length - 1
+            line = []
+
+    return splited_lines
+

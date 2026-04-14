@@ -80,5 +80,5 @@ if __name__ == '__main__':
     else:
         print("没有找到路径")
 
-    visualize.visualization(vessel_net, path)
+    # visualize.visualization(vessel_net, path)
 
