@@ -56,6 +56,7 @@ vessel_net = {
 
 if __name__ == '__main__':
 
+    # 调用pyvista.plotter渲染中心线模型
     visualize.visualize_centerline("../source/vtk/Centerline model.vtk")
 
     """
@@ -80,5 +81,5 @@ if __name__ == '__main__':
     else:
         print("没有找到路径")
 
-    # visualize.visualization(vessel_net, path)
+    visualize.visualization(vessel_net, path)
 

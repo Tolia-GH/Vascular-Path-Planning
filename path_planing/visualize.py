@@ -151,9 +151,12 @@ def visualize_centerline(centerline_path):
 
     plotter = pv.Plotter()
 
+    # 导入中心线段
+    plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True)
+
     splited_centerlines = split_polydata_lines(centerline.lines)
 
-    plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True)
+
 
     # for i in range(0,103):
     #     print(centerline.points[i])
