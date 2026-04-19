@@ -3,6 +3,11 @@ import mplcursors
 import pyvista as pv
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
+import os
+import sys
+
+from pyvistaqt import QtInteractor
+from PyQt5 import QtWidgets, QtCore
 
 def visualization(vessel_net, path=None):
     """
@@ -87,8 +92,12 @@ def visualization(vessel_net, path=None):
     plt.show()
 
 
-# 基于 pyvista 的可视化方法，对 vtk 文件兼容性更好
 def visualization_pyvista(vessel_net, path=None):
+    """
+    可视化三维血管网络和路径（基于pyvista，对vtk兼容性更好）
+    :param vessel_net: 加权邻接表，表示血管网络
+    :param path: 可选，表示A*算法计算的路径（一个由节点组成的列表）
+    """
     plotter = pv.Plotter()
 
     # 所有节点的坐标列表
@@ -141,6 +150,10 @@ def visualization_pyvista(vessel_net, path=None):
 
 
 def visualize_centerline(centerline_path):
+    """
+    中心线vtk文件的模型可视化
+    :param centerline_path: vtk文件路径
+    """
     centerline = pv.read(centerline_path)
 
     # print(centerline)
@@ -188,6 +201,11 @@ def visualize_centerline(centerline_path):
     plotter.show()
 
 def split_polydata_lines(lines):
+    """
+    将中心线vtk的PolyData.lines的一维数组根据压缩结构划分为多维线段数组
+    :param lines:
+    :return: splited_lines: Array数组，每个元素为一个列出线段上的所有点索引的数组
+    """
     splited_lines = []
     line_length = lines[0]
     left_edge = 1
@@ -211,4 +229,88 @@ def split_polydata_lines(lines):
             line = []
 
     return splited_lines
+
+def build_polyline_from_points(points: np.ndarray) -> pv.PolyData:
+    poly = pv.PolyData()
+    poly.points = np.asarray(points)
+    n = poly.n_points
+    poly.lines = np.hstack([[n], np.arange(n, dtype=np.int64)])
+    return poly
+
+
+def build_splitted_centerline(centerline: pv.PolyData):
+    splitted_centerline = split_polydata_lines(centerline.lines)
+    segments = []
+    for ids in splitted_centerline:
+        ids_arr = np.asarray(ids, dtype=np.int64)
+        segment_points = centerline.points[ids_arr]
+        segments.append(build_polyline_from_points(segment_points))
+    return splitted_centerline, segments
+
+
+def visualize_centerline_qt(centerline_path: str):
+
+    class CenterlineViewer(QtWidgets.QMainWindow):
+        def __init__(self, vtk_path: str):
+            super().__init__()
+            self._selected_index = None
+            self._actors = []
+
+            self.setWindowTitle("Centerline Viewer")
+
+            splitter = QtWidgets.QSplitter()
+            orientation = getattr(QtCore.Qt, "Orientation", QtCore.Qt)
+            splitter.setOrientation(orientation.Horizontal)
+
+            self.plotter = QtInteractor(splitter)
+            self.segment_list = QtWidgets.QListWidget(splitter)
+
+            splitter.setStretchFactor(0, 4)
+            splitter.setStretchFactor(1, 1)
+            self.setCentralWidget(splitter)
+
+            vtk_path = os.path.abspath(vtk_path)
+            centerline = pv.read(vtk_path)
+            self.splitted_centerline, self._segments = build_splitted_centerline(centerline)
+
+            self.plotter.set_background("white")
+            self.plotter.add_axes()
+            self._actors = [
+                self.plotter.add_mesh(seg, color="black", line_width=2)
+                for seg in self._segments
+            ]
+            self.plotter.reset_camera()
+
+            for i, ids in enumerate(self.splitted_centerline):
+                self.segment_list.addItem(f"segment_{i} (points={len(ids)})")
+
+            self.segment_list.currentRowChanged.connect(self._on_row_changed)
+            if self.segment_list.count() > 0:
+                self.segment_list.setCurrentRow(0)
+
+        def _set_actor_color(self, actor, rgb):
+            actor.GetProperty().SetColor(float(rgb[0]), float(rgb[1]), float(rgb[2]))
+
+        def _on_row_changed(self, row: int):
+            if row < 0 or row >= len(self._actors):
+                return
+
+            if self._selected_index is not None and 0 <= self._selected_index < len(self._actors):
+                self._set_actor_color(self._actors[self._selected_index], (0.0, 0.0, 0.0))
+
+            self._set_actor_color(self._actors[row], (1.0, 0.0, 0.0))
+            self._selected_index = row
+            self.plotter.render()
+
+        def closeEvent(self, event):
+            try:
+                self.plotter.close()
+            finally:
+                event.accept()
+
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    viewer = CenterlineViewer(centerline_path)
+    viewer.resize(1200, 800)
+    viewer.show()
+    return app.exec()
 

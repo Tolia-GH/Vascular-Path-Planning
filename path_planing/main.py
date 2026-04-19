@@ -1,6 +1,8 @@
 from a_star import a_star
 from node import Node
 import visualize
+import argparse
+import os
 
 vessel_nodes = []
 
@@ -56,8 +58,23 @@ vessel_net = {
 
 if __name__ == '__main__':
 
-    # 调用pyvista.plotter渲染中心线模型
-    visualize.visualize_centerline("../source/vtk/Centerline model.vtk")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--qt",
+        action="store_true",
+        help="使用 PyQt + pyvistaqt 的 GUI（左侧渲染，右侧线段列表，选中高亮）",
+    )
+    parser.add_argument(
+        "--vtk",
+        default=os.path.join("..", "source", "vtk", "Centerline model.vtk"),
+        help="中心线 vtk 文件路径",
+    )
+    args = parser.parse_args()
+
+    if args.qt:
+        visualize.visualize_centerline_qt(args.vtk)
+    else:
+        visualize.visualize_centerline(args.vtk)
 
     """
     预处理部分，需要将中心线vtk文件转换为加权邻接表
