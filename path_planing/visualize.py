@@ -156,12 +156,6 @@ def visualize_centerline(centerline_path):
     """
     centerline = pv.read(centerline_path)
 
-    # print(centerline)
-
-    # print(centerline.lines)
-    # print(centerline.points)
-    # print(centerline.cell)
-
     plotter = pv.Plotter()
 
     # 导入中心线段
@@ -255,6 +249,9 @@ def visualize_centerline_qt(centerline_path: str):
             super().__init__()
             self._selected_index = None
             self._actors = []
+            self._highlight_actor = None
+            self._base_line_width = 1.5
+            self._highlight_line_width = 4.0
 
             self.setWindowTitle("Centerline Viewer")
 
@@ -276,11 +273,18 @@ def visualize_centerline_qt(centerline_path: str):
             self.plotter.set_background("white")
             self.plotter.add_axes()
             self._actors = [
-                self.plotter.add_mesh(seg, color="black", line_width=2)
+                self.plotter.add_mesh(seg, color="black", line_width=self._base_line_width)
                 for seg in self._segments
             ]
+            # 让线段以管线风格渲染，减少细线在重叠时的视觉干扰。
+            for actor in self._actors:
+                prop = actor.GetProperty()
+                prop.SetOpacity(1.0)
+                prop.SetLineWidth(self._base_line_width)
+                prop.SetRenderLinesAsTubes(True)
             self.plotter.reset_camera()
 
+            self.segment_list.addItem("无高亮")
             for i, ids in enumerate(self.splitted_centerline):
                 self.segment_list.addItem(f"segment_{i} (points={len(ids)})")
 
@@ -292,14 +296,37 @@ def visualize_centerline_qt(centerline_path: str):
             actor.GetProperty().SetColor(float(rgb[0]), float(rgb[1]), float(rgb[2]))
 
         def _on_row_changed(self, row: int):
-            if row < 0 or row >= len(self._actors):
+            if row < 0:
                 return
 
             if self._selected_index is not None and 0 <= self._selected_index < len(self._actors):
-                self._set_actor_color(self._actors[self._selected_index], (0.0, 0.0, 0.0))
+                self._actors[self._selected_index].SetVisibility(True)
 
-            self._set_actor_color(self._actors[row], (1.0, 0.0, 0.0))
-            self._selected_index = row
+            if self._highlight_actor is not None:
+                self.plotter.remove_actor(self._highlight_actor, reset_camera=False)
+                self._highlight_actor = None
+
+            if row == 0:
+                self._selected_index = None
+                self.plotter.render()
+                return
+
+            seg_index = row - 1
+            if seg_index < 0 or seg_index >= len(self._actors):
+                return
+
+            # 选中时隐藏该段黑色底线，仅显示红色高亮层，减少重叠造成的缝隙感。
+            self._actors[seg_index].SetVisibility(False)
+            self._highlight_actor = self.plotter.add_mesh(
+                self._segments[seg_index],
+                color="red",
+                line_width=self._highlight_line_width,
+                opacity=1.0,
+                pickable=False,
+                reset_camera=False,
+            )
+            self._highlight_actor.GetProperty().SetRenderLinesAsTubes(True)
+            self._selected_index = seg_index
             self.plotter.render()
 
         def closeEvent(self, event):
