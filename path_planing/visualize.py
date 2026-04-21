@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets, QtCore
 
 def visualization(vessel_net, path=None):
     """
-    可视化三维血管网络和路径
+    可视化基于加权邻接表的三维血管网络和路径
     vessel_net: 加权邻接表，表示血管网络
     path: 可选，表示A*算法计算的路径（一个由节点组成的列表）
     """
@@ -72,7 +72,7 @@ def visualization(vessel_net, path=None):
             'E', fontsize=12, verticalalignment='bottom'
         )
 
-    # 设置坐标轴标签ppython
+    # 设置坐标轴标签python
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
