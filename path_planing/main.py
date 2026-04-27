@@ -74,7 +74,8 @@ if __name__ == '__main__':
     if args.qt:
         visualize.visualize_centerline_qt(args.vtk)
     else:
-        visualize.visualize_centerline(args.vtk)
+        visualize.visualize_centerline(args.vtk, "../source/vtk/blood vessels.vtk")
+        # visualize.visualize_vessels("../source/vtk/blood vessels.vtk")
 
     """
     预处理部分，需要将中心线vtk文件转换为加权邻接表

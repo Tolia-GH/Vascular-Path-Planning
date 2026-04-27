@@ -149,17 +149,36 @@ def visualization_pyvista(vessel_net, path=None):
     plotter.show()
 
 
-def visualize_centerline(centerline_path):
+def visualize_vessels(vessels_path):
+    """
+    血管vtk文件的模型可视化
+    :param vessels_path: vtk文件路径
+    :return:
+    """
+
+    vessels = pv.read(vessels_path)
+
+    plotter = pv.Plotter()
+
+    plotter.add_mesh(vessels)
+
+    plotter.show()
+
+
+
+def visualize_centerline(centerline_path, vessels_path):
     """
     中心线vtk文件的模型可视化
     :param centerline_path: vtk文件路径
     """
     centerline = pv.read(centerline_path)
+    vessels = pv.read(vessels_path)
 
     plotter = pv.Plotter()
 
     # 导入中心线段
     plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True)
+    plotter.add_mesh(vessels, color='red', opacity=0.5)
 
     splited_centerlines = split_polydata_lines(centerline.lines)
 
@@ -173,7 +192,7 @@ def visualize_centerline(centerline_path):
     #     print(centerline.points[i])
     #     plotter.add_mesh(centerline.points[i], color='green', line_width=1, render_points_as_spheres=True)
 
-    plotter.add_mesh(centerline.points, color='blue', line_width=1, render_points_as_spheres=True, pickable=True)
+    plotter.add_mesh(centerline.points, color='red', line_width=1, render_points_as_spheres=True, pickable=True)
 
     # 回调函数（点击时触发）
     def callback(point, picker):
@@ -340,4 +359,5 @@ def visualize_centerline_qt(centerline_path: str):
     viewer.resize(1200, 800)
     viewer.show()
     return app.exec()
+
 
