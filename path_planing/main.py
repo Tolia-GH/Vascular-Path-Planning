@@ -3,7 +3,6 @@ from node import Node
 import visualize
 import argparse
 import os
-import sys
 
 vessel_nodes = []
 
@@ -74,41 +73,13 @@ if __name__ == '__main__':
         ),
         help="中心线 vtk 文件路径",
     )
-    parser.add_argument(
-        "--build-vtk-from-mrk",
-        action="store_true",
-        help="从 source/mrk 的 Centerline curve (*.mrk.json) 合并生成 vtk 后再可视化",
-    )
-    parser.add_argument(
-        "--mrk-dir",
-        default=os.path.join("..", "source", "mrk"),
-        help="Slicer 导出的 Centerline curve (*.mrk.json) 目录",
-    )
-    parser.add_argument(
-        "--vtk-out",
-        default=os.path.join("..", "source", "vtk", "Centerline_curves_merged.vtk"),
-        help="由 mrk 合并生成的 vtk 输出路径",
-    )
     args = parser.parse_args()
-
-    if args.build_vtk_from_mrk:
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        if repo_root not in sys.path:
-            sys.path.insert(0, repo_root)
-        from preprocess.merge_centerline_curves import (
-            build_centerline_points_and_lines_from_mrk_dir,
-            export_polydata_to_vtk,
-        )
-
-        points, lines = build_centerline_points_and_lines_from_mrk_dir(args.mrk_dir)
-        export_polydata_to_vtk(points, lines, args.vtk_out)
-        args.vtk = args.vtk_out
 
     if args.qt:
         visualize.visualize_centerline_qt(args.vtk)
     else:
-        visualize.visualize_centerline(args.vtk, "../source/vtk/blood vessels.vtk")
-        # visualize.visualize_vessels("../source/vtk/blood vessels.vtk")
+        visualize.visualize_centerline(args.vtk, "../source/vtk/blood_vessels.vtk")
+        # visualize.visualize_vessels("../source/vtk/blood_vessels.vtk")
 
     """
     预处理部分，需要将中心线vtk文件转换为加权邻接表
