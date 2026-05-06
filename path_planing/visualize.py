@@ -175,38 +175,37 @@ def visualize_centerline(centerline_path, vessels_path):
     vessels = pv.read(vessels_path)
 
     plotter = pv.Plotter()
+    plotter.add_text("Right click to pick a point", font_size=10, name="info")
 
     # 导入中心线段
-    plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True)
-    plotter.add_mesh(vessels, color='red', opacity=0.5)
+    plotter.add_mesh(centerline, color='black', line_width=2, render_points_as_spheres=True, pickable=False)
+    plotter.add_mesh(vessels, color='red', opacity=0.5, pickable=False)
 
     splited_centerlines = split_polydata_lines(centerline.lines)
-
-
-
-    # for i in range(0,103):
-    #     print(centerline.points[i])
-    #     plotter.add_mesh(centerline.points[i], color='red', line_width=1, render_points_as_spheres=True)
-    #
-    # for i in range(103,512):
-    #     print(centerline.points[i])
-    #     plotter.add_mesh(centerline.points[i], color='green', line_width=1, render_points_as_spheres=True)
 
     plotter.add_mesh(centerline.points, color='red', line_width=1, render_points_as_spheres=True, pickable=True)
 
     # 回调函数（点击时触发）
-    def callback(point, picker):
+    def on_pick(point, picker):
         if point is None:
             return
 
-        print(point)
+        # 删除旧文本
+        plotter.remove_actor("info")
+
+        # 添加新文本
+        plotter.add_text(
+            f"x: {point[0]:.3f}, y: {point[1]:.3f}, z: {point[2]:.3f}", font_size=10, name="info"
+        )
+
+        # print(point)
 
 
     # 启用点拾取
     plotter.enable_point_picking(
-        callback=callback,
+        callback=on_pick,
         use_picker=True,
-        show_message=True,
+        show_message=False,
         show_point=True,
         picker='point'
     )
