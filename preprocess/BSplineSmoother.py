@@ -62,7 +62,7 @@ def iter_polydata_polyline_point_ids(polydata: pv.PolyData):
 
 def smooth_centerline_polydata_bspline(
     centerline,
-    smoothing_factor: float = 2.0,
+    smoothing_factor: float = 0.0000001,
     degree: int = 3,
     num_samples: int = 300,
     enforce_endpoints: bool = True,
