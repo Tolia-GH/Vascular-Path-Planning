@@ -40,62 +40,84 @@
 
 ## 2. 技术选型
 
-### 2.1 方案对比
+### 2.1 统一技术路线
 
-| 方案 | 渲染库 | 语言 | 优势 | 劣势 |
-|------|--------|------|------|------|
-| **A: React + vtk.js** | vtk.js | TypeScript/JS | 与 INDEX.md 技术栈一致；医学影像社区标准；支持 Volume Rendering | 学习曲线陡；Bundle 体积大；A* 需移植 |
-| **B: React + Three.js** | Three.js | TypeScript/JS | 生态丰富；浏览器部署；性能好 | VTK→glTF 转换链路脆弱；A* 需移植 |
-| **C: Python (PyVista + Qt)** | PyVista/VTK + Qt | Python | **已有代码直接复用**；VTK 原生加载无需格式转换；开发速度最快 | 非 Web 前端；需 Python 运行环境 |
+系统所有阶段（包括最终生产态）统一采用 **Python + PyVista + PyQt5 桌面工作站**架构。
 
-### 2.2 推荐方案（最终选择）
+选型依据：
 
-**最终选择：方案 C — Python + PyVista + Qt**
+1. **最大化代码复用**：现有 Python A* 算法（`a_star.py`）、VTK 加载（`pyvista.read()`）、中心线分割（`split_polydata_lines`）、线段列表（`CenterlineViewer`）全部直接复用，零语言切换成本
+2. **零数据转换**：VTK/VTP 文件是 PyVista 原生格式，无需任何格式转换链路
+3. **医学影像生态**：PyVista 底层是 VTK，与 3D Slicer/VMTK/ITK/MONAI 技术栈天然一致，Volume Rendering、DICOM 加载、DSA 叠加均原生支持
+4. **桌面工作站形态**：符合手术机器人导航工作站部署场景——手术室内本地工作站而非浏览器
+5. **全阶段一致**：演示阶段 → 后端服务化 → ROS2 硬件联调 → 术中导航 全部在同一 Python 技术栈内渐进演进，不引入技术栈切换
 
-选择理由：
+### 2.2 最终生产态技术栈
 
-1. **最大化代码复用**：现有 Python A* 算法（`a_star.py`）、VTK 加载（`pyvista.read()`）、中心线分割（`split_polydata_lines`）、线段列表（`CenterlineViewer`）全部直接复用，零移植成本
-2. **零数据转换**：VTK 文件是 PyVista 原生格式，无需 vtk→gltf 预转换链路
-3. **医学影像生态**：PyVista 底层是 VTK，与 3D Slicer/VMTK 技术栈天然一致
-4. **验证速度最快**：在 Python 环境中可随时调用现有脚本进行算法调参、数据验证
-5. **当前阶段匹配**：未开展硬件联调阶段的核心需求是快速验证路径规划算法与 3D 可视化交互，桌面应用最合适
-
-**后续演进**：在 Phase 5（硬件联调阶段），如需 Web 部署，再按 INDEX.md 技术栈移植到 React + vtk.js/Three.js。届时路径规划核心算法已充分验证，移植仅涉及渲染层。
-
-### 2.3 硬件联调阶段选型分析
-
-当进入瑞鈊设备联调阶段时，系统数据流如 INDEX.md 第 3 章定义：
+系统最终生产态为：
 
 ```
-瑞鈊SDK (C++ Windows)
-  → hardware_interface_node (ROS2 C++ 节点)
-    → state_estimator_node (ROS2 C++ 节点)
-      → ROS2 Bridge (Python FastAPI 后端)
-        → WebSocket (10~30 Hz 位姿)
-          → 前端 Web UI
+Desktop Navigation Workstation:
+  Python + PyQt5 + PyVista + VTK + QtInteractor
+
+Backend Services:
+  Python + FastAPI + WebSocket（数据接口）
+
+Real-time Control Layer:
+  ROS2 + DDS + C++
+
+Medical Imaging:
+  VTK / ITK / SimpleITK / MONAI / VMTK
+
+Path Planning:
+  NetworkX / NumPy / SciPy / A* / Hybrid A*
+
+Simulation:
+  SOFA Framework + BeamAdapter
+
+State Estimation:
+  EKF / UKF / Particle Filter
+
+Control:
+  PID / MPC / 限幅控制 / 力反馈控制
 ```
 
-**前端从不直接接触瑞鈊SDK**。前端仅消费 WebSocket JSON 消息，因此三种方案对硬件联调适配性如下：
+### 2.3 阶段演进路线
 
-| 维度 | 方案 A (vtk.js) | 方案 B (Three.js) | 方案 C (PyVista) |
-|------|:--:|:--:|:--:|
-| WebSocket 接入 | ✅ 浏览器原生API | ✅ 浏览器原生API | △ 需自建 Qt/Flask 桥 |
-| 实时场景更新 | △ VTK管线偏重 | ✅ r3f响应式更新轻量 | ✘ VTK重建开销大 |
-| 动态对象管理 (器械标记/预测轨迹) | △ | ✅ 性能最优 | ✘ 不适合高频更新 |
-| DICOM/Volume Rendering | ✅ 原生支持 | ❌ 需混用Cornerstone3D | ✅ VTK原生支持 |
-| 与 INDEX.md 一致 | ✅ 文档指定栈 | ⚠️ 但文档4.2节同时列出Three.js | ✘ 非Web前端 |
-| 部署 | ✅ 静态文件 | ✅ 静态文件 | ✘ Python环境依赖 |
-| Bundle 体积 | ~2MB+ gzipped | ~500KB gzipped | N/A |
-| 适合场景 | 需Volume Rendering时 | 纯表面+动态场景 | 算法调参/离线验证 |
+```text
+Phase 1-3: 路径规划与3D导航演示
+  Python + PyVista + PyQt5
+  验证 A* 规划、VTK加载、中心线显示、路径高亮、权重调节、B样条平滑
 
-**结论**：硬件联调阶段**推荐继续使用方案 B (Three.js)**。原因：
+Phase 4: 后端服务化
+  保留 Python 路径规划代码，迁移为 FastAPI + WebSocket 服务
 
-1. Three.js 对实时动态场景（30Hz器械位姿、预测轨迹、安全走廊变化）的响应式更新性能优于 vtk.js
-2. INDEX.md 4.2 节同时列出 `Cornerstone3D` 与 `Three.js` 作为系统组件——混用在设计允许范围内
-3. 当前演示阶段的核心渲染对象为表面模型 + 线段 + 标记点，Three.js 完全覆盖
-4. 真正需要 vtk.js/Cornerstone3D 的时机是引入 DSA/CTA Volume Rendering，而非硬件联调本身
+Phase 5: 硬件与 ROS2 联调
+  引入 ROS2 + DDS + C++
+  瑞鈊跟踪设备 → hardware_interface_node → state_estimator_node
+  FastAPI WebSocket 桥接 → PyQt5 桌面工作站
 
-**后续混合方案**：当需要 Volume 叠加时，在现有 Three.js 场景旁引入 Cornerstone3D 视口，而非整体替换渲染库。
+Phase 6: 术中影像集成
+  DSA/X-ray 影像流接入 → 2D/3D 配准
+  VTK Volume Rendering / DICOM 视口 → 状态估计
+
+Phase 7: 完整桌面式术中导航工作站
+  PyQt5 + PyVista + ROS2 + FastAPI
+  安全监督/状态估计/VLA/LLM 辅助/人工接管全部纳入同一工作站
+```
+
+### 2.4 已弃用的技术路线
+
+以下技术路线已被决策弃用，不再作为任何阶段的推荐方案：
+
+- React / TypeScript 前端
+- Three.js / React Three Fiber 场景
+- vtk.js Web 渲染
+- Cornerstone3D 浏览器医学影像
+- 浏览器 SPA 架构
+- Web 导航工作站
+- Zustand / Redux 前端状态管理
+- TSX 组件架构
 
 ---
 
