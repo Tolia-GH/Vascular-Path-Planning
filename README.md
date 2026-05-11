@@ -259,15 +259,26 @@ replan_required
 
 ### 4.1 技术方案
 
-系统采用以下技术栈：
+系统依据开发阶段采用分层渐进的技术路线：
 
-- 前端：`React + vtk.js`
+**最终生产态（Phase 7）**：
+
+- 3D 前端：`React + Three.js + Cornerstone3D` — 详见 §4.3.9.5 选型分析
 - Web 后端：`Python + FastAPI + WebSocket`
 - 实时控制：`ROS2 + DDS + C++`
 - 硬件通信：`EtherCAT / CAN / 厂商 SDK`
 - 算法库：`VTK / NumPy / SciPy / NetworkX / VMTK`
 - 状态估计：`EKF / UKF / Particle Filter`
 - 控制算法：`PID / MPC / 限幅控制 / 力反馈控制`
+
+**当前演示阶段（Phase 1-3）**：
+
+- 3D 前端：`Python + PyVista + PyQt5 (QtInteractor)` — 详见 §4.3.9
+- 路径规划引擎：`vascular_path_planning/planning/a_star.py`（直接复用）
+- 数据加载：PyVista 原生加载 VTK/VTP 格式，零转换链路
+- 路径平滑：`preprocess/BSplineSmoother.py`（直接复用）
+
+**演进路线**：演示阶段 Python 桌面应用 → `FastAPI + WebSocket` 后端化（Phase 4）→ `Three.js` 实时 3D 前端 + `Cornerstone3D` 医学影像（Phase 5~6）→ `React + Three.js + Cornerstone3D` 完整术中导航（Phase 7）。路线详情见 §4.3.9.4。
 
 `FastAPI + WebSocket` 负责 UI、数据服务、日志和 AI 调度；`ROS2 + DDS + C++` 负责机器人执行、传感器回读、控制周期、安全监督和硬件驱动。
 
@@ -484,6 +495,152 @@ ROS2 图结构包含：
 + MONAI / nnU-Net
 + VLA / LLM Assistant
 ```
+
+#### 4.3.9 路径规划3D演示阶段技术方案
+
+在未开展硬件联调联试阶段，系统前端采用 **Python + PyVista + Qt (PyQt5)** 桌面应用路线，专注于路径规划算法验证与 3D 可视化交互。
+
+##### 4.3.9.1 选型依据
+
+| 方案 | 渲染库 | 语言 | 优势 | 劣势 |
+|------|--------|------|------|------|
+| A: React + vtk.js | vtk.js | TypeScript/JS | 与 4.1 节技术栈一致；医学影像社区标准；支持 Volume Rendering | 学习曲线陡；A\* 算法需移植 |
+| B: React + Three.js | Three.js | TypeScript/JS | 生态丰富；浏览器部署；实时场景性能好 | VTK→glTF 转换链路脆弱；A\* 需移植 |
+| **C: Python (PyVista + Qt)** | PyVista/VTK + Qt | Python | **已有代码直接复用**；VTK 原生加载无需格式转换；开发速度最快 | 非 Web 前端；需 Python 运行环境 |
+
+**选择方案 C**，理由：
+
+1. **最大化代码复用**：现有 Python A\* 算法（`vascular_path_planning/planning/a_star.py`）、VTK 加载（`pyvista.read()`）、中心线分段（`split_polydata_lines`）、线段列表交互全部直接复用，零移植成本
+2. **零数据转换**：VTK 文件是 PyVista 原生格式，无需 vtk→gltf 预转换链路
+3. **医学影像生态**：PyVista 底层为 VTK，与 3D Slicer/VMTK 技术栈天然一致
+4. **验证速度最快**：在 Python 环境中可随时调用现有脚本进行算法调参、数据验证
+
+##### 4.3.9.2 演示系统架构
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  UI Layer (PyQt5)                    │
+│  ┌───────────┐ ┌──────────┐ ┌───────────────────┐  │
+│  │ 3D Viewer │ │  Info    │ │  Control Panel    │  │
+│  │ (PyVista  │ │  Panel   │ │ (权重/起终点/模式) │  │
+│  │ QtInter-  │ │ (QtWidget│ │ (QtWidgets)       │  │
+│  │  actor)   │ │ s)       │ │                   │  │
+│  └───────────┘ └──────────┘ └───────────────────┘  │
+├─────────────────────────────────────────────────────┤
+│              App State (QObject/Signals)              │
+│  ┌───────────┐ ┌──────────┐ ┌───────────────────┐  │
+│  │ Scene     │ │ Planner  │ │ Segment           │  │
+│  │ State     │ │ State    │ │ State             │  │
+│  └───────────┘ └──────────┘ └───────────────────┘  │
+├─────────────────────────────────────────────────────┤
+│               Logic Layer (Python 复用)              │
+│  ┌───────────┐ ┌──────────┐ ┌───────────────────┐  │
+│  │ a_star.py │ │ node.py  │ │ BSplineSmoother   │  │
+│  │ (A*全局   │ │ (节点    │ │ .py (B样条        │  │
+│  │  规划)    │ │  结构)   │ │  路径平滑)        │  │
+│  └───────────┘ └──────────┘ └───────────────────┘  │
+├─────────────────────────────────────────────────────┤
+│                  Data Layer                          │
+│  ┌───────────┐ ┌──────────┐ ┌───────────────────┐  │
+│  │ VTK       │ │ JSON     │ │ FCSV              │  │
+│  │ (pv.read) │ │ Graph    │ │ Endpoints         │  │
+│  └───────────┘ └──────────┘ └───────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+##### 4.3.9.3 演示能力范围
+
+| 模块 | 说明 | 状态 |
+|------|------|------|
+| 血管3D模型渲染 | 基于现有 VTK 血管模型 + 中心线数据 | ✅ 包含 |
+| 中心线骨架显示 | 线段/管线渲染，分支拓扑可视化 | ✅ 包含 |
+| 路径规划引擎 | A\* 全局规划，基于中心线重采样图 | ✅ 包含 |
+| 规划路径可视化 | 路径高亮、起终点标记、可行性颜色编码 | ✅ 包含 |
+| 交互选点 | 3D 点拾取设定起点/终点，触发路径规划 | ✅ 包含 |
+| 路径信息面板 | 路径长度、节点数、曲率峰值、可行性等级 | ✅ 包含 |
+| 代价权重调节 | 前端滑块调节 w\_len / w\_curv / w\_rad 等 | ✅ 包含 |
+| 多候选路径对比 | A\* 多结果并行渲染 | ✅ 包含 |
+| 安全走廊可视化 | 管状半透明渲染 | ✅ 包含 |
+| B样条路径平滑 | 直接复用 `preprocess/BSplineSmoother.py` | ✅ 包含 |
+| 曲率热力图 | 路径分段着色 + colorbar | ✅ 包含 |
+| DSA/X-ray 2D 视图 | 需影像流 + 配准，非演示范围 | ❌ 不包含 |
+| 术中实时导航 UI | 需硬件 + ROS2 + 状态估计 | ❌ 不包含 |
+| 配准(2D/3D Registration) | 需术中影像 + 跟踪器 | ❌ 不包含 |
+| 安全监督/碰撞检测 | 需实时位姿 + 力反馈 | ❌ 不包含 |
+| ROS2 / DDS 通信 | 硬件未联调 | ❌ 不包含 |
+| VLA / LLM 模块 | 高层AI辅助，非演示核心 | ❌ 不包含 |
+| 瑞鈊跟踪设备对接 | 硬件未接入 | ❌ 不包含 |
+| WebSocket 实时推送 | 无后端/硬件数据源 | ❌ 不包含 |
+| 导丝/导管运动学仿真 | SOFA/Cosserat Rod 属仿真层 | ❌ 不包含 |
+
+##### 4.3.9.4 与完整系统演进关系
+
+```text
+Phase 1-3: 纯路径规划3D演示 (当前阶段)
+  Python + PyVista + Qt
+  └── 验证 A* 算法 + 3D 可视化交互
+        │
+        ▼
+Phase 4: WebSocket + FastAPI 后端
+  └── 路径规划引擎迁移至后端（Python 原生复用，无需移植）
+        │
+        ▼
+Phase 5: 瑞鈊硬件联调
+  └── 引入 ROS2 + DDS + C++ 实时控制层
+        │
+        ▼
+Phase 6: DSA 影像集成
+  └── 引入 Cornerstone3D / vtk.js Volume Rendering
+        │
+        ▼
+Phase 7: 完整术中导航系统
+  React + Three.js + Cornerstone3D (参见 §4.1 最终生产态技术栈)
+  └── 安全监督器 / 人工接管 / VLA / LLM 全量交付
+```
+
+##### 4.3.9.5 硬件联调阶段前端选型
+
+当进入 Phase 5 瑞鈊设备联调时，需重新评估前端选型：
+
+| 维度 | 方案 A (vtk.js) | 方案 B (Three.js) | 方案 C (PyVista) |
+|------|:--:|:--:|:--:|
+| WebSocket 接入 | ✅ 浏览器原生 API | ✅ 浏览器原生 API | △ 需自建 Qt/Flask 桥 |
+| 实时场景更新 (30Hz) | △ VTK 管线偏重 | ✅ r3f 响应式更新轻量 | ✘ VTK 重建开销大 |
+| 动态对象管理 (器械标记/预测轨迹) | △ | ✅ 性能最优 | ✘ 不适合高频更新 |
+| DICOM/Volume Rendering | ✅ 原生支持 | ❌ 需混用 Cornerstone3D | ✅ VTK 原生支持 |
+| 与 4.1 节一致 | ✅ 文档指定栈 | ⚠️ 4.2 节同时列出 | ✘ 非 Web 前端 |
+| 部署 | ✅ 静态文件 | ✅ 静态文件 | ✘ Python 环境依赖 |
+
+**推荐 Phase 5 使用 Three.js**：对实时动态场景的响应式更新性能最优，INDEX.md 4.2 节同时列出 `Cornerstone3D` 与 `Three.js` 作为系统组件。当需要 DSA/CTA Volume Rendering 时，在 Three.js 场景旁引入 Cornerstone3D 视口，而非整体替换渲染库。
+
+##### 4.3.9.6 已有代码资产
+
+| 模块 | 文件 | 复用方式 |
+|------|------|----------|
+| A\* 算法 | `vascular_path_planning/planning/a_star.py` | 直接复用 |
+| 节点类 | `vascular_path_planning/planning/node.py` | 直接复用 |
+| PyVista 可视化 | `path_planing/visualize.py` | 扩展核心逻辑 |
+| Qt 线段选择器 | `path_planing/visualize.py: CenterlineViewer` | 参考交互范式 |
+| 图转换器 | `preprocess/converter.py` | 理解邻接表结构 |
+| B样条平滑 | `preprocess/BSplineSmoother.py` | 直接复用 |
+| 区域生长 | `preprocess/region_growing.py` | 启发式距离预计算 |
+
+##### 4.3.9.7 已有数据资产
+
+| 文件 | 路径 | 用途 |
+|------|------|------|
+| 血管模型 | `source/vtk/blood_vessels.vtk` | 3D 血管表面渲染 |
+| 中心线(合并) | `source/vtk/Centerline_curves_merged.vtk` | 路径规划图 + 线段渲染 |
+| 中心线(原始) | `source/vtk/Centerline model.vtk` | 备选中心线 |
+| 有向图 JSON | `source/graphs/centerline_vessel_net.json` | A\* 搜索图（~3000+ 节点） |
+| 终点集 FCSV | `source/fcsv/Endpoints.fcsv` | 预设起点/终点 |
+| 分支 FCSV | `source/fcsv/intervenPoints.fcsv` | 分支交叉点 |
+
+##### 4.3.9.8 参考文档
+
+详细开发计划见 `PLAN_3D_DEMO.md`，包含完整架构设计、功能清单（Phase 1~3 共 24 项功能）、实施计划（逐任务拆解，总计 ~14 天）、UI 布局设计、颜色编码规范、关键风险与应对、验收标准与里程碑。
+
+---
 
 ## 5. 数据与坐标规范
 
