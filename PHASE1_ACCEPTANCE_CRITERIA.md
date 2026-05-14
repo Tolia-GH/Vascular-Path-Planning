@@ -232,3 +232,200 @@
   9. 点选精度 (MV-26 ~ MV-28)
 
 第三步：回归检查 (RG-01 ~ RG-03)
+```
+
+---
+
+## 6. Phase 1 验收结果
+
+> 验收日期: 2026-05-14  
+> 验收人: Cline AI + 用户手动验证  
+> 结论: **Phase 1 验收通过** ✅
+
+### 6.1 自动化集成测试（26/26 通过）
+
+| ID | 测试项 | 结果 | 实测数据 |
+|----|--------|:--:|------|
+| AT-01 | engine 模块全部导入 | ✅ | `graph_loader`, `planner`, `path_analyzer` OK |
+| AT-02 | render 模块全部导入 | ✅ | `vessel_renderer`, `centerline_renderer`, `path_renderer` OK |
+| AT-03 | ui 模块全部导入 | ✅ | `main_window`, `viewer_3d`, `control_panel`, `path_info_panel`, `segment_list_panel` OK |
+| AT-04 | utils 模块全部导入 | ✅ | `kd_tree` OK |
+| AT-05 | `ui.__all__` 导出完整 | ✅ | 5 个类全部导出 |
+| AT-06 | KDTree 最近邻查询正确 | ✅ | `query=(5.1,5.2,4.9)` → `node=(5.0,5.0,5.0)`, `dist=0.2449mm` |
+| AT-07 | 10,561 节点建树 | ✅ | 正常构建 |
+| AT-08 | 图数据加载 | ✅ | `graph_nodes=10561`, `edges=21120` |
+| AT-09 | 起点/终点解析正确 | ✅ | 坐标与 source 数据一致 |
+| AT-10 | A* 路径搜索成功 | ✅ | 746 个路径节点 |
+| AT-11 | 规划耗时 < 200ms | ✅ | 实测 **13.93ms** |
+| AT-12 | 路径分析输出 | ✅ | `length_mm=816.26`, `feasibility=red` |
+| AT-13 | 路径长度 > 0 | ✅ | 816.26mm |
+| AT-14 | ControlPanel 初始状态正确 | ✅ | 起点/终点为空 |
+| AT-15 | ControlPanel 起点选择 | ✅ | OK |
+| AT-16 | ControlPanel 终点选择 | ✅ | OK |
+| AT-17 | ControlPanel 清除 | ✅ | 起点/终点清空 |
+| AT-18 | PathInfoPanel 数据显示 | ✅ | 长度 816.26mm, feasibility red |
+| AT-19 | `point_picked` 信号声明 | ✅ | 已声明 |
+| AT-20 | `pick_missed` 信号声明 | ✅ | 已声明 |
+| AT-21 | `_pick_centerline_by_screen` 方法存在 | ✅ | 存在 |
+| AT-22 | `_pick_model_surface` 方法存在 | ✅ | 存在 |
+| AT-23 | `_screen_pick_radius_px = 24.0` | ✅ | 默认值正确 |
+| AT-24 | `enable_picking()` 功能 | ✅ | 调用不报错 |
+| AT-25 | 模拟信号发射 | ✅ | `point_picked.emit((100,200,300))` 正确接收 |
+| AT-26 | py_compile 编译通过 | ✅ | 4 个核心文件全部通过 |
+
+### 6.2 屏幕点选精度烟测（2/2 通过）
+
+| ID | 测试项 | 结果 | 实测数据 |
+|----|--------|:--:|------|
+| AT-24 | 中心线点投影→反向命中 | ✅ | `SCREEN_PICK_OK=True` |
+| AT-25 | 反向命中误差 < 0.01mm | ✅ | `SCREEN_PICK_DIST_MM = 0.000000` |
+
+### 6.3 回归检查（3/3 通过）
+
+| ID | 测试项 | 结果 |
+|----|--------|:--:|
+| RG-01 | 所有 `.py` 中文注释使用 `#` | ✅ |
+| RG-02 | 默认路径正确 | ✅ `source/graphs/centerline_vessel_net.json` 已修复 |
+| RG-03 | 无遗留调试代码 | ✅ |
+
+### 6.4 手动交互验收汇总
+
+| 类别 | 项数 | 通过 | 状态 |
+|------|:--:|:--:|------|
+| GUI 启动与数据加载 (MV-01~05) | 5 | 5 | ✅ |
+| 3D 场景交互 (MV-06~08) | 3 | 3 | ✅ |
+| 起点/终点选择 (MV-09~14) | 6 | 6 | ✅ |
+| 路径规划 (MV-15~16) | 2 | 2 | ✅ |
+| 路径信息面板 (MV-17~21) | 5 | 5 | ✅ |
+| 控制面板功能 (MV-22~23) | 2 | 2 | ✅ |
+| 线段列表 (MV-24~25) | 2 | 2 | ✅ |
+| 点选精度 (MV-26~28) | 3 | 3 | ✅ |
+| **合计** | **28** | **28** | ✅ |
+
+### 6.5 总体验收结论
+
+| 类别 | 项数 | 通过 | 通过率 |
+|------|:--:|:--:|:--:|
+| 自动化集成测试 | 26 | 26 | 100% |
+| 手动交互验收 | 28 | 28 | 100% |
+| 回归检查 | 3 | 3 | 100% |
+| **总计** | **57** | **57** | **100%** |
+
+---
+
+## 7. 项目目录结构
+
+```
+Vascular-Path-Planning/
+│
+├── path_planing/                      # 主代码目录
+│   ├── __init__.py
+│   ├── main.py                        # 【已有】原主入口
+│   ├── main_qt.py                     # 【新建】Qt GUI 主入口
+│   ├── a_star.py                      # 【已有】A* 算法备选实现
+│   ├── node.py                        # 【已有】节点数据结构
+│   ├── visualize.py                   # 【已有】可视化模块
+│   │
+│   ├── engine/                        # 【新建】规划引擎层
+│   │   ├── __init__.py
+│   │   ├── graph_loader.py            # JSON 图加载器（10,561 nodes, 21,120 edges）
+│   │   ├── planner.py                 # 规划器统一接口（封装已有 A*）
+│   │   └── path_analyzer.py           # 路径分析（length/cost/curvature/radius/feasibility）
+│   │
+│   ├── render/                        # 【新建】渲染辅助层
+│   │   ├── __init__.py
+│   │   ├── vessel_renderer.py         # 血管模型渲染（312,530 points, 625,124 cells）
+│   │   ├── centerline_renderer.py     # 中心线分段渲染（145 segments）
+│   │   └── path_renderer.py           # 路径渲染（管线 + 起终点 marker）
+│   │
+│   ├── ui/                            # 【新建】UI 组件层
+│   │   ├── __init__.py                # 导出 ControlPanel, MainWindow, PathInfoPanel, SegmentListPanel, Viewer3D
+│   │   ├── main_window.py             # 主窗口（QMainWindow, QSplitter 70/30 布局）
+│   │   ├── viewer_3d.py               # 3D 视图组件（PyVista QtInteractor + 屏幕点选）
+│   │   ├── control_panel.py           # 控制面板（起终点选择/权重/规划/清除）
+│   │   ├── path_info_panel.py         # 路径信息面板（长度/节点/曲率/半径/可行性）
+│   │   └── segment_list_panel.py      # 线段列表面板（145 段，点击高亮联动）
+│   │
+│   └── utils/                         # 【新建】工具层
+│       ├── __init__.py
+│       └── kd_tree.py                 # KDTreeSnapper（屏幕距离优先吸附 + VTK CellPicker 兜底）
+│
+├── vascular_path_planning/            # 【已有】规划算法（不作修改）
+│   └── planning/
+│       ├── a_star.py                  # A* 算法核心
+│       └── node.py                    # 节点类
+│
+├── preprocess/                        # 【已有】预处理工具（不作修改）
+│   ├── BSplineSmoother.py             # B样条平滑
+│   ├── converter.py                   # 图转换
+│   └── region_growing.py              # 区域生长
+│
+├── source/                            # 【已有】数据资产
+│   ├── vtk/
+│   │   ├── blood_vessels.vtk          # 血管表面模型
+│   │   └── Centerline_curves_merged.vtk # 合并中心线
+│   └── graphs/
+│       └── centerline_vessel_net.json # 有向图（10,561 nodes, 21,120 edges）
+│
+├── Aligned_Centerlines/               # 对齐中心线（147 段 VTP）
+├── Smoothed/                          # 平滑中心线（107 段 VTP）
+├── Models/                            # 血管模型
+│   └── Vessel_Surface.vtp
+│
+├── _test_integration.py               # 【新建】集成测试（5 节 26 项）
+├── _test_compile.py                   # 【新建】编译检查
+├── PLAN_3D_DEMO.md                    # 【新建】开发计划文档
+├── PHASE1_ACCEPTANCE_CRITERIA.md      # 【新建】本验收文档
+├── requirements.txt                   # 【更新】添加 networkx, scipy
+├── .gitignore                         # 【更新】修正拼写 + 追加规则
+├── README.md                          # 【已有】
+│
+├── centerline-planner-3d/             # 备选方案（Web 版，已弃用）
+├── organized_by_step/                 # 离线处理管线（Step0~Step9）
+└── check_data.py                      # 根目录检查脚本
+```
+
+### 7.1 核心模块文件数统计
+
+| 层级 | 文件数 | 说明 |
+|------|:--:|------|
+| `path_planing/engine/` | 4 | 图加载 + 规划器 + 路径分析 |
+| `path_planing/render/` | 4 | 血管 + 中心线 + 路径渲染 |
+| `path_planing/ui/` | 6 | 主窗口 + 3D视图 + 面板 × 3 |
+| `path_planing/utils/` | 2 | KDTree 吸附 |
+| 顶层新建 | 4 | main_qt.py + 测试 × 2 + 文档 × 2 |
+| **Phase 1 新增总计** | **20 文件** | 不含已有代码修改 |
+
+### 7.2 关键数据
+
+| 数据项 | 值 |
+|------|------|
+| 血管模型点数 | 312,530 |
+| 血管模型面数 | 625,124 |
+| 中心线总点数 | 10,705 |
+| 中心线段数 | 145 |
+| 图节点数 | 10,561 |
+| 图边数 | 21,120 |
+| 图连通性 | ✅ 连通 |
+| A* 节点数（测试路径） | 746 |
+| A* 耗时（测试路径） | 13.93 ms |
+| 测试路径长度 | 816.26 mm |
+| 屏幕点选精度 | 0.000000 mm |
+
+---
+
+## 8. 已知问题 & 后续优化
+
+| 问题 | 优先级 | 状态 |
+|------|:--:|------|
+| 3D 场景帧率 < 30 FPS（关闭平滑渲染待验证） | P2 | Phase 2 优化 |
+| 路径可行性颜色编码未实现 | P2 | Phase 2（T2.2, T2.3） |
+| VTK/PyQt 进程退出时偶发 access violation | P3 | 非功能性，不影响使用 |
+| 中心线点数较多时屏幕遍历性能 | P3 | 10,705 点当前可接受 |
+| `_screen_pick_radius_px` 需手动调参 | P3 | 当前 24.0px 可用，后续可做 UI 设置项 |
+
+---
+
+> **文档版本**: v2.0  
+> **验收日期**: 2026-05-14  
+> **Phase 1 状态**: ✅ 验收通过  
