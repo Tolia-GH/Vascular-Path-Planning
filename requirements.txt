@@ -1,6 +1,8 @@
 matplotlib>=3.7
 mplcursors>=0.5
+networkx>=3.0
 pyvista>=0.43
 pyvistaqt>=0.11
 numpy>=1.24
+scipy>=1.10
 PyQt5>=5.15
