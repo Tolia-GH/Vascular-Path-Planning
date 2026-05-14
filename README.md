@@ -1,6 +1,6 @@
 # 血管介入导航系统技术设计文档（0511 修订版）
 
-> 📋 **快速导航**：[Phase 1 验收标准](./PHASE1_ACCEPTANCE_CRITERIA.md)　|　[3D Demo 开发计划](./PLAN_3D_DEMO.md)
+> 📋 **快速导航**：[Phase 1 验收情况汇报](./PHASE1_ACCEPTANCE_CRITERIA.md)　|　[3D Demo 开发计划](./PLAN_3D_DEMO.md)
 
 ## 1. 目标与范围
 
