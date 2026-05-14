@@ -1,7 +1,7 @@
 # 血管路径规划 3D 演示前端 —— 开发计划
 
-> 版本: v2.1  
-> 状态: Phase 0 + Phase 1 已完成，路径规划闭环可运行  
+> 版本: v2.0  
+> 状态: 未开展硬件联调联试，仅路径规划3D演示  
 > 技术路线: **方案 C — Python + PyVista + Qt**  
 > 基于文档: INDEX.md（血管介入导航系统技术设计文档 0422）
 
@@ -569,32 +569,32 @@ segment_list.current_segment_changed.connect(viewer_3d.highlight_segment)
 
 ## 10. 实施计划
 
-### 10.1 Phase 0: 环境搭建 (0.5天) ✅
+### 10.1 Phase 0: 环境搭建 (0.5天)
 
-| 任务 | 内容 | 预计 | 状态 |
-|------|------|------|------|
-| T0.1 | 安装依赖: `pip install pyvista pyvistaqt PyQt5 numpy scipy` | 0.5h | ✅ |
-| T0.2 | 验证已有 VTK/JSON 数据可正常加载 | 0.5h | ✅ |
-| T0.3 | 验证已有 A* 算法可正常运行 | 0.5h | ✅ |
-| T0.4 | 创建项目目录骨架 (ui/ engine/ render/ utils/) | 1h | ✅ |
+| 任务 | 内容 | 预计 |
+|------|------|------|
+| T0.1 | 安装依赖: `pip install pyvista pyvistaqt PyQt5 numpy scipy` | 0.5h |
+| T0.2 | 验证已有 VTK/JSON 数据可正常加载 | 0.5h |
+| T0.3 | 验证已有 A* 算法可正常运行 | 0.5h |
+| T0.4 | 创建项目目录骨架 (ui/ engine/ render/ utils/) | 1h |
 
-### 10.2 Phase 1: MVP (5天) ✅
+### 10.2 Phase 1: MVP (5天)
 
-| 任务 | 对应功能 | 功能ID | 预计 | 状态 |
-|------|----------|--------|------|------|
-| T1.1 | 新建 `main_qt.py` — 主窗口骨架 (QMainWindow + QSplitter) | F3 | 2h | ✅ |
-| T1.2 | 集成 PyVista QtInteractor 到 3D 视图区域 | F3 | 1h | ✅ |
-| T1.3 | `render/vessel_renderer.py` — 封装血管模型加载与渲染 | F1 | 1h | ✅ |
-| T1.4 | `render/centerline_renderer.py` — 封装中心线分段渲染 | F2 | 1h | ✅ |
-| T1.5 | `ui/segment_list_panel.py` — 扩展已有 CenterlineViewer | F4 | 0.5h | ✅ |
-| T1.6 | `engine/graph_loader.py` — 封装 JSON 图加载 | F5 | 2h | ✅ |
-| T1.7 | `engine/planner.py` — 封装已有 A* 接口 | F6 | 1h | ✅ |
-| T1.8 | `render/path_renderer.py` — 路径管线渲染 + 起终点标记 | F7,F8 | 1h | ✅ |
-| T1.9 | `ui/viewer_3d.py` — 集成点拾取回调，设定起点/终点 | F9 | 2h | ✅ |
-| T1.10 | `engine/path_analyzer.py` — 路径分析 (长度/曲率/半径/可行性) | F10 | 3h | ✅ |
-| T1.11 | `ui/path_info_panel.py` — 路径信息展示面板 | F10 | 2h | ✅ |
-| T1.12 | `ui/control_panel.py` — FCSV 端点下拉加载 | F11 | 2h | ✅ |
-| T1.13 | 整体联调 + 信号/槽连接 + 样式调整 | — | 4h |   |
+| 任务 | 对应功能 | 预计 |
+|------|----------|------|
+| T1.1 | 新建 `main_qt.py` — 主窗口骨架 (QMainWindow + QSplitter) | F3 | 2h |
+| T1.2 | 集成 PyVista QtInteractor 到 3D 视图区域 | F3 | 1h |
+| T1.3 | `render/vessel_renderer.py` — 封装血管模型加载与渲染 | F1 | 1h |
+| T1.4 | `render/centerline_renderer.py` — 封装中心线分段渲染 | F2 | 1h |
+| T1.5 | `ui/segment_list_panel.py` — 扩展已有 CenterlineViewer | F4 | 0.5h |
+| T1.6 | `engine/graph_loader.py` — 封装 JSON 图加载 | F5 | 2h |
+| T1.7 | `engine/planner.py` — 封装已有 A* 接口 | F6 | 1h |
+| T1.8 | `render/path_renderer.py` — 路径管线渲染 + 起终点标记 | F7,F8 | 1h |
+| T1.9 | `ui/viewer_3d.py` — 集成点拾取回调，设定起点/终点 | F9 | 2h |
+| T1.10 | `engine/path_analyzer.py` — 路径分析 (长度/曲率/半径/可行性) | F10 | 3h |
+| T1.11 | `ui/path_info_panel.py` — 路径信息展示面板 | F10 | 2h |
+| T1.12 | `ui/control_panel.py` — FCSV 端点下拉加载 | F11 | 2h |
+| T1.13 | 整体联调 + 信号/槽连接 + 样式调整 | — | 4h |
 
 ### 10.3 Phase 2: 交互增强 (4天)
 
@@ -639,28 +639,26 @@ segment_list.current_segment_changed.connect(viewer_3d.highlight_segment)
 ### 12.1 功能验收
 
 - [x] 连通子图内任意两点路径规划成功率 ≥ 99%（已有 Python A* 验证）
-- [x] Qt 版 A* 结果与已有 `a_star.py` 独立运行结果一致（集成测试通过：746 nodes, 13.93ms, 816.26mm）
-- [ ] 3D 场景交互帧率 ≥ 30 FPS（Phase 2 优化项，PyVista 关闭平滑渲染）
-- [x] 应用启动加载数据 < 3s
-- [x] 单次路径计算 < 200ms（3000节点图）（实测 ~13ms）
-- [x] 路径规划结果可复现（相同输入→相同输出）（KDTree 确定性吸附 + A* 确定性）
+- [ ] Qt 版 A* 结果与已有 `a_star.py` 独立运行结果一致
+- [ ] 3D 场景交互帧率 ≥ 30 FPS（PyVista 关闭平滑渲染）
+- [ ] 应用启动加载数据 < 3s
+- [ ] 单次路径计算 < 200ms（3000节点图）
+- [ ] 路径规划结果可复现（相同输入→相同输出）
 
 ### 12.2 UI 验收
 
-- [x] 支持鼠标旋转/缩放/平移 (PyVista 内建)
-- [x] 3D 点选设定起点/终点，吸附最近中心线节点（屏幕距离优先 + VTK CellPicker 兜底，屏幕点选精度 0.0mm）
-- [ ] 路径颜色编码正确 (可行性分段着色)（Phase 2）
-- [x] 信息面板数据实时更新
-- [x] 窗口最小尺寸 1024×768
-- [x] 点选未命中提示（状态栏：「未命中血管或中心线，请靠近中心线重新点击」）
-- [x] 点选偏移修复（优先屏幕距离最近中心线点 + VTK CellPicker 兜底）
+- [ ] 支持鼠标旋转/缩放/平移 (PyVista 内建)
+- [ ] 3D 点选设定起点/终点，吸附最近中心线节点
+- [ ] 路径颜色编码正确 (可行性分段着色)
+- [ ] 信息面板数据实时更新
+- [ ] 窗口最小尺寸 1024×768
 
 ### 12.3 数据验收
 
-- [x] 血管模型正确显示（形状/位置与 3D Slicer 一致）（312,530 points, 625,124 cells 加载正常）
-- [x] 中心线拓扑与源数据一致（10,705 points, 145 segments 加载正常）
-- [x] 路径沿中心线行走，视觉上在血管轮廓内
-- [x] 线段列表项与实际中心线分段一一对应（145 segments 正确显示）
+- [ ] 血管模型正确显示（形状/位置与 3D Slicer 一致）
+- [ ] 中心线拓扑与源数据一致
+- [ ] 路径不穿出血管壁（肉眼判断）
+- [ ] 线段列表项与实际中心线分段一一对应
 
 ---
 
