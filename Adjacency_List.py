@@ -5,7 +5,7 @@ import pyvista as pv
 from scipy.spatial import KDTree
 
 # 路径配置（修改为你本地的路径）
-vtk_path = "./source/vtk/Centerline_model.vtk"       # 中心线路径
+vtk_path = "./source/vtk/Centerline_curves_merged.vtk"       # 中心线路径
 fcsv_path = "./source/fcsv/Endpoints.fcsv"      # 端点坐标
 
 # ---------------------------------------
