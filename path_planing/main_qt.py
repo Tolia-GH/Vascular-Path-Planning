@@ -31,7 +31,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._centerline_path: Optional[str] = None
         self._vessels_path: Optional[str] = None
 
+        # 显示对象初始化
         self._vessels_actor = None
+        self._vessels_wireframe_actor = None
         self._vessels_points_actor = None
         self._centerline_actor = None
         self._smoothed_actor = None
@@ -41,8 +43,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.plotter.set_background("white")
         self.plotter.add_axes()
-        self.plotter.add_text("右键拾取点查看坐标", font_size=10, name="info")
 
+        # 允许选点
+        self.plotter.add_text("右键拾取点查看坐标", font_size=10, name="info")
         self.plotter.enable_point_picking(
             callback=self._on_pick,
             use_picker=True,
@@ -78,20 +81,23 @@ class MainWindow(QtWidgets.QMainWindow):
         data_layout.addWidget(self.btn_load_centerline)
         root.addWidget(box_data)
 
-        # 显示控制
+        # 对象显示控制
         box_vis = QtWidgets.QGroupBox("显示控制")
         vis_layout = QtWidgets.QVBoxLayout(box_vis)
         self.chk_show_vessels = QtWidgets.QCheckBox("血管模型")
+        self.chk_show_vessels_wireframe = QtWidgets.QCheckBox("血管模型三维网格")
         self.chk_show_vessels_points = QtWidgets.QCheckBox("血管模型点")
         self.chk_show_centerline = QtWidgets.QCheckBox("中心线")
         self.chk_show_smoothed = QtWidgets.QCheckBox("平滑中心线")
         self.chk_show_control_points = QtWidgets.QCheckBox("控制点")
         self.chk_show_vessels.setChecked(True)
+        self.chk_show_vessels_wireframe.setChecked(True)
         self.chk_show_vessels_points.setChecked(True)
         self.chk_show_centerline.setChecked(True)
         self.chk_show_smoothed.setChecked(True)
         self.chk_show_control_points.setChecked(True)
         vis_layout.addWidget(self.chk_show_vessels)
+        vis_layout.addWidget(self.chk_show_vessels_wireframe)
         vis_layout.addWidget(self.chk_show_vessels_points)
         vis_layout.addWidget(self.chk_show_centerline)
         vis_layout.addWidget(self.chk_show_smoothed)
@@ -109,7 +115,7 @@ class MainWindow(QtWidgets.QMainWindow):
         vis_layout.addWidget(vessel_opacity_widget)
         root.addWidget(box_vis)
 
-        # 中心线平滑
+        # 中心线平滑参数设置
         box_smooth = QtWidgets.QGroupBox("中心线平滑")
         smooth_layout = QtWidgets.QFormLayout(box_smooth)
 
@@ -177,9 +183,11 @@ class MainWindow(QtWidgets.QMainWindow):
         dock.setWidget(panel)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
 
+        # 组件绑定事件刷新
         self.btn_load_vessels.clicked.connect(self._on_upload_vessels)
         self.btn_load_centerline.clicked.connect(self._on_upload_centerline)
         self.chk_show_vessels.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
+        self.chk_show_vessels_wireframe.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
         self.chk_show_vessels_points.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
         self.chk_show_centerline.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
         self.chk_show_smoothed.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
@@ -285,12 +293,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def refresh_scene(self, reset_camera: bool = False) -> None:
         self._remove_actor(self._vessels_actor)
+        self._remove_actor(self._vessels_wireframe_actor)
         self._remove_actor(self._vessels_points_actor)
         self._remove_actor(self._centerline_actor)
         self._remove_actor(self._smoothed_actor)
         self._remove_actor(self._picked_points_actor)
 
         self._vessels_actor = None
+        self._vessels_wireframe_actor = None
         self._vessels_points_actor = None
         self._centerline_actor = None
         self._smoothed_actor = None
@@ -301,6 +311,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._vessels_poly,
                 color="red",
                 opacity=max(0.0, min(1.0, self.slider_vessel_opacity.value() / 100.0)),
+                pickable=False,
+                reset_camera=False,
+            )
+
+        if self._vessels_poly is not None and self.chk_show_vessels_wireframe.isChecked():
+
+            self._vessels_wireframe_actor = self.plotter.add_mesh(
+                self._vessels_poly,
+                style="wireframe",
+                color="black",
                 pickable=False,
                 reset_camera=False,
             )
@@ -327,7 +347,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._smoothed_centerline_poly is not None and self.chk_show_smoothed.isChecked():
             self._smoothed_actor = self.plotter.add_mesh(
                 self._smoothed_centerline_poly,
-                color="red",
+                color="blue",
                 line_width=2,
                 render_lines_as_tubes=True,
                 pickable=False,
