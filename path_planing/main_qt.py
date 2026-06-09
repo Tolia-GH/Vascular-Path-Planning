@@ -32,6 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._vessels_path: Optional[str] = None
 
         self._vessels_actor = None
+        self._vessels_points_actor = None
         self._centerline_actor = None
         self._smoothed_actor = None
         self._picked_points_actor = None
@@ -81,14 +82,17 @@ class MainWindow(QtWidgets.QMainWindow):
         box_vis = QtWidgets.QGroupBox("显示控制")
         vis_layout = QtWidgets.QVBoxLayout(box_vis)
         self.chk_show_vessels = QtWidgets.QCheckBox("血管模型")
+        self.chk_show_vessels_points = QtWidgets.QCheckBox("血管模型点")
         self.chk_show_centerline = QtWidgets.QCheckBox("中心线")
         self.chk_show_smoothed = QtWidgets.QCheckBox("平滑中心线")
         self.chk_show_control_points = QtWidgets.QCheckBox("控制点")
         self.chk_show_vessels.setChecked(True)
+        self.chk_show_vessels_points.setChecked(True)
         self.chk_show_centerline.setChecked(True)
         self.chk_show_smoothed.setChecked(True)
         self.chk_show_control_points.setChecked(True)
         vis_layout.addWidget(self.chk_show_vessels)
+        vis_layout.addWidget(self.chk_show_vessels_points)
         vis_layout.addWidget(self.chk_show_centerline)
         vis_layout.addWidget(self.chk_show_smoothed)
         vis_layout.addWidget(self.chk_show_control_points)
@@ -176,6 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_load_vessels.clicked.connect(self._on_upload_vessels)
         self.btn_load_centerline.clicked.connect(self._on_upload_centerline)
         self.chk_show_vessels.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
+        self.chk_show_vessels_points.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
         self.chk_show_centerline.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
         self.chk_show_smoothed.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
         self.chk_show_control_points.toggled.connect(lambda _: self.refresh_scene(reset_camera=False))
@@ -280,10 +285,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def refresh_scene(self, reset_camera: bool = False) -> None:
         self._remove_actor(self._vessels_actor)
+        self._remove_actor(self._vessels_points_actor)
         self._remove_actor(self._centerline_actor)
         self._remove_actor(self._smoothed_actor)
         self._remove_actor(self._picked_points_actor)
+
         self._vessels_actor = None
+        self._vessels_points_actor = None
         self._centerline_actor = None
         self._smoothed_actor = None
         self._picked_points_actor = None
@@ -294,6 +302,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 color="red",
                 opacity=max(0.0, min(1.0, self.slider_vessel_opacity.value() / 100.0)),
                 pickable=False,
+                reset_camera=False,
+            )
+
+        if self._vessels_poly is not None and self.chk_show_vessels_points.isChecked():
+            self._vessels_points_actor = self.plotter.add_mesh(
+                self._vessels_poly.points,
+                color="red",
+                render_points_as_spheres=True,
+                pickable=True,
                 reset_camera=False,
             )
 
