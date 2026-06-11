@@ -6,7 +6,7 @@ import os
 
 vessel_nodes = []
 
-# 示例：血管网络和路径规划
+# 示例：血管网络加权邻接表结构
 vessel_net = {
     # 主主动脉 (Aortic Arch)
     (0.0, 0.0, 0.0): [  # 起始点，坐标为 (x, y, z)
