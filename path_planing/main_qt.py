@@ -88,6 +88,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         panel = QtWidgets.QWidget()
         root = QtWidgets.QVBoxLayout(panel)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(panel)
+
         root.setContentsMargins(8, 8, 8, 8)
         root.setSpacing(8)
 
@@ -126,10 +131,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chk_show_control_points = QtWidgets.QCheckBox("可选中心线节点")
         self.chk_show_path = QtWidgets.QCheckBox("显示规划路径")
         self.chk_show_vessels.setChecked(True)
-        self.chk_show_vessels_wireframe.setChecked(True)
+        self.chk_show_vessels_wireframe.setChecked(False)
         self.chk_show_vessels_points.setChecked(False)
         self.chk_show_centerline.setChecked(True)
-        self.chk_show_smoothed.setChecked(True)
+        self.chk_show_smoothed.setChecked(False)
         self.chk_show_control_points.setChecked(True)
         self.chk_show_path.setChecked(True)
         vis_layout.addWidget(self.chk_show_vessels)
@@ -230,7 +235,7 @@ class MainWindow(QtWidgets.QMainWindow):
         root.addWidget(box_debug)
         root.addStretch(1)
 
-        dock.setWidget(panel)
+        dock.setWidget(scroll)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
 
         self.btn_load_vessels.clicked.connect(self._on_upload_vessels)
@@ -360,22 +365,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if actor is not None:
             self.plotter.remove_actor(actor, reset_camera=False)
 
-    def _scene_scale(self) -> float:
-        poly = self._centerline_poly or self._vessels_poly
-        if poly is None:
-            return 1.0
-        bounds = np.asarray(poly.bounds, dtype=float)
-        mins = bounds[[0, 2, 4]]
-        maxs = bounds[[1, 3, 5]]
-        diagonal = float(np.linalg.norm(maxs - mins))
-        return max(diagonal, 1.0)
-
-    def _marker_radius(self) -> float:
-        return self._scene_scale() * 0.008
-
-    def _path_radius(self) -> float:
-        return self._marker_radius() * 0.6
-
     def _build_polyline(self, coordinates) -> pv.PolyData:
         points = np.asarray(coordinates, dtype=float)
         polyline = pv.PolyData()
@@ -387,7 +376,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._graph is None or node_id is None:
             return None
         center = self._graph.get_node(node_id).coord
-        return pv.Sphere(radius=self._marker_radius(), center=center)
+        return pv.Sphere(radius=1.5, center=center)
 
     def refresh_scene(self, reset_camera: bool = False) -> None:
         self._remove_actor(self._vessels_actor)
@@ -423,6 +412,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._vessels_wireframe_actor = self.plotter.add_mesh(
                 self._vessels_poly,
                 style="wireframe",
+                line_width=1,
                 color="black",
                 pickable=False,
                 reset_camera=False,
@@ -462,7 +452,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._graph_points_actor = self.plotter.add_mesh(
                 self._graph.coordinates,
                 color="darkred",
-                point_size=6,
+                point_size=4,
                 render_points_as_spheres=True,
                 pickable=True,
                 reset_camera=False,
@@ -473,7 +463,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._start_marker_actor = self.plotter.add_mesh(
                 start_marker,
                 color="red",
-                point_size=10,
                 smooth_shading=True,
                 pickable=False,
                 reset_camera=False,
@@ -484,18 +473,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self._end_marker_actor = self.plotter.add_mesh(
                 end_marker,
                 color="blue",
-                point_size=10,
                 smooth_shading=True,
                 pickable=False,
                 reset_camera=False,
             )
 
         if self._path_polyline is not None and self.chk_show_path.isChecked():
-            path_tube = self._path_polyline.tube(radius=self._path_radius())
+            path_tube = self._path_polyline.tube(radius=1)
             self._path_actor = self.plotter.add_mesh(
                 path_tube,
                 color="green",
-                point_size=10,
                 opacity=1.0,
                 pickable=False,
                 reset_camera=False,
