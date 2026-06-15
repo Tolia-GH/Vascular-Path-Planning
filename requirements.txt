@@ -1,7 +1,8 @@
 matplotlib>=3.7
 mplcursors>=0.5
-pyvista>=0.43
+pyvista>=0.48.2
 pyvistaqt>=0.11
 numpy>=1.24
 PyQt5>=5.15
 scipy>=1.10
+XInput-Python==0.4.0
