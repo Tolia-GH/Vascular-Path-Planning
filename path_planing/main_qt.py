@@ -482,7 +482,7 @@ class MainWindow(QtWidgets.QMainWindow):
             path_tube = self._path_polyline.tube(radius=1)
             self._path_actor = self.plotter.add_mesh(
                 path_tube,
-                color="green",
+                color="blue",
                 opacity=1.0,
                 pickable=False,
                 reset_camera=False,
